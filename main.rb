@@ -12,6 +12,19 @@ class Player
   def name
     @name
   end
+
+  def enter_code_row
+    print "Your guess: "
+    while true
+    input = gets.chomp.upcase!
+      if input.match(/[GOPBYR]/i) && input.length == 4
+        return input.split('')
+      else 
+        print '   #  Try again: '
+      end
+    end
+    
+  end
 end
 
 class Codemaker < Player
@@ -25,11 +38,7 @@ class Codemaker < Player
 end
 
 class Decoder < Player
-  def enter_code_row
-    print "Enter your guess:"
-    input = gets.chomp.upcase!.split('')
-    #validate(input) -> return 
-  end
+  
 
   
 end
@@ -39,14 +48,19 @@ game = Game.new(12,4,6)
 
 
 game_over = false
+
 if game.player.class.to_s == "Decoder"
+  game.set_code_pattern(game.opponent.create_random_code)
+  puts ""
+  game.display(game.code_pattern,0,0)
+
   until game_over
-    game.set_code_pattern(game.opponent.create_random_code)
     game.add_guess(game.player.enter_code_row)
-    game.display(game.all_guesses.last,2,2)
+    exact_matches = game.number_of_exact_matches(game.all_guesses.last)
+    game.display(game.all_guesses.last, exact_matches,2)
   
     #game.player.enter_code_row
-  game_over = true
+  game_over = false
   
   end
 end

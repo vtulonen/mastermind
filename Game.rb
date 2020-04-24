@@ -15,9 +15,12 @@ class Game
     display_rules
     @player = choose_role
     @opponent = choose_opponent
-    print "          GUESS         MATCH    COLOR MATCH\n"
-    print "   #-----------------------------------------#"
-    self.display([" ", " ", " ", " "],0,0)
+    system "clear" || "cls"
+    print "\n"
+    display_possible_colors($COLORS)
+    print "           #{add_color(15,"GUESS           MATCH    COLOR MATCH")}\n"
+    self.display(["?", "?", "?", "?"],0,0)
+    
   end
 
   def player
@@ -31,7 +34,7 @@ class Game
   def display_rules
     print "              Welcome to Master Mind!\n\n"
     print "   #  As a decoder your job is to guess\n"
-    print "   #  a coderow made of #{$COLOR_AMOUNT} colors.\n"
+    print "   #  a code made of #{$COLOR_AMOUNT} colored letters.\n"
     print "   #  When you get a correct color in your\n"
     print "   #  guess, the computer marks the amount\n"
     print "   #  with a white number on the board. If\n"
@@ -47,12 +50,17 @@ class Game
   end
 
   def choose_role
-    print "Choose your role: Decoder / Codemaker (d/c): "
-    input = gets.chomp.upcase!
-    print "\n\n"
-    if input == "D"
-      return Decoder.new("Player")
-    else return Codemaker.new("Player")
+    print "   #  Choose your role: Decoder / Codemaker (d/c): "
+    
+    
+    while true
+      input = gets.chomp.upcase!
+      if input == "D"
+        return Decoder.new("Player")
+      elsif input == "C" 
+        return Codemaker.new("Player")
+      else print '   #  Enter "D" or "C": '
+      end
     end
   end
 
@@ -79,8 +87,23 @@ class Game
     @@all_guesses
   end
 
+  def number_of_exact_matches(code)
+    matches = 0
+    code.each_with_index do |e,index|
+      matches += 1 if e == code_pattern[index]
+    end
+    return matches
+  end
 
 
+
+
+
+
+
+  
+
+  
   #Display methods
 
   
@@ -108,19 +131,21 @@ class Game
     
   end
 
-  def display(code_pattern, correct_both, correct_color)
-  
-      print "\n   |" 
+  def display(code_pattern, exact_match, color_match)
+    
+      print "   #--------------------------------------------#\n   |  |"
       code_pattern.each {|i| print " #{colorize(i)} |"}
-      print "     [#{add_color(196,correct_both)}]         [#{add_color(15,correct_color)}]     |"
-      print "\n   #-----------------------------------------# -> "
+      print "     [#{add_color(196,exact_match)}]         [#{add_color(15,color_match)}]     |"
+      print "\n   #--------------------------------------------# -> "
       
     end
 
   def display_possible_colors(colors)
-    print "   #      |"
+    print "   #--------------------------------------------#\n"
+    print "   #  COLORS     "
+    print " |"
     colors.each {|i| print " #{colorize(i)} |"}
-    print "\n\n"
+    print "     #\n   #--------------------------------------------#\n\n"
   end
 end
 
