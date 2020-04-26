@@ -1,3 +1,4 @@
+require 'byebug'
 class Game
    
   @@all_guesses = []
@@ -20,7 +21,7 @@ class Game
     display_possible_colors($COLORS)
     print "           #{add_color(15,"GUESS           MATCH    COLOR MATCH")}\n"
     self.display(["?", "?", "?", "?"],0,0)
-    
+    play
   end
 
   def player
@@ -95,6 +96,36 @@ class Game
     return matches
   end
 
+  def exacts_to_X(code)
+    exacts_marked = code.each_with_index.map do |e,index|
+       if e == code_pattern[index]
+        e = "X" 
+       else 
+        e = e
+       end
+    end
+    return exacts_marked
+  end
+
+  def number_of_color_matches(code)
+    exacts = exacts_to_X(code)
+    matches = 0
+    
+    code.each_with_index do |e, index|
+      #byebug
+      if e == "X"
+        next
+      end
+
+      if e != code_pattern[index] && code_pattern.any?(e)
+        matches += 1
+      end
+    end
+    return matches
+  end
+
+  
+
 
 
 
@@ -149,3 +180,23 @@ class Game
   end
 end
 
+def play
+  game_over = false
+
+
+  if player.class.to_s == "Decoder"
+    set_code_pattern(opponent.create_random_code)
+    puts ""
+    display(code_pattern,0,0)
+
+    until game_over
+      add_guess(player.enter_code_row)
+      exact_matches = number_of_exact_matches(all_guesses.last)
+      color_matches = number_of_color_matches(all_guesses.last)
+      display(all_guesses.last, exact_matches, color_matches)
+
+    end
+
+
+  end
+end
