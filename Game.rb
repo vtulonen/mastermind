@@ -111,13 +111,13 @@ class Game
     exacts = exacts_to_X(code)
     matches = 0
     
-    code.each_with_index do |e, index|
+    exacts.each_with_index do |e, index|
       #byebug
       if e == "X"
         next
       end
 
-      if e != code_pattern[index] && code_pattern.any?(e)
+      if  exacts.any?(e)
         matches += 1
       end
     end
@@ -194,9 +194,14 @@ def play
       exact_matches = number_of_exact_matches(all_guesses.last)
       color_matches = number_of_color_matches(all_guesses.last)
       display(all_guesses.last, exact_matches, color_matches)
-
+      game_over = true if exact_matches == 4
     end
 
+
+
+  end
+
+  if player.class.to_s == "Codemaker"
 
   end
 end
