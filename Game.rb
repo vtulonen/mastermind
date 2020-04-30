@@ -1,7 +1,13 @@
 require 'byebug'
 class Game
    
-  @@all_guesses = []
+  attr_accessor :code_pattern, :opponent, :player
+
+  @@all_guesses = [" "]
+  
+  @opponent
+  @player
+  @code_pattern
 
   def initialize(max_guesses,slots,color_amount) #rules = constant
     $MAX_GUESSES = max_guesses
@@ -14,40 +20,25 @@ class Game
   def setup
     
     display_rules
-    @player = Decoder.new("Player")#choose_role
-    @opponent = Codemaker.new("Computer")#choose_opponent
-    system "clear" || "cls"
+    @player = Codemaker.new("Player")#choose_role
+    @opponent = Decoder.new("Computer")#choose_opponent
+    
+    #system "clear" || "cls"
+=begin
     print "\n"
     display_possible_colors($COLORS)
     print "           #{add_color(15,"GUESS           MATCH    COLOR MATCH")}\n"
     self.display(["?", "?", "?", "?"],0,0)
-    play
+    #play
+=end
   end
 
-  def player
-    @player
+  def add_guess(guess)
+    @@all_guesses << guess
   end
 
-  def opponent
-    @opponent
-  end
-
-  def display_rules
-    print "              Welcome to Master Mind!\n\n"
-    print "   #  As a decoder your job is to guess\n"
-    print "   #  a code made of #{$COLOR_AMOUNT} colored letters.\n"
-    print "   #  When you get a correct color in your\n"
-    print "   #  guess, the computer marks the amount\n"
-    print "   #  with a white number on the board. If\n"
-    print "   #  you get a color on the correct place\n"
-    print "   #  it'll be indicated with a red number.\n"
-    print "   #  Crack the code in 12 turn or less to\n"
-    print "   #  win. If you wish to be the codemaker\n"
-    print "   #  the computer will try to guess it.\n"
-    print "   #  When entering a color, use the first\n"
-    print "   #  letter of the color like shown below.\n\n"
-    print "   #             Good luck!\n\n"
-    display_possible_colors($COLORS)
+  def all_guesses
+    @@all_guesses
   end
 
   def choose_role
@@ -76,46 +67,104 @@ class Game
     @code_pattern = code_pattern
   end
 
-  def code_pattern
-    @code_pattern
-  end
-
   def add_guess(guess)
     @@all_guesses << guess
   end
 
-  def all_guesses
-    @@all_guesses
-  end
 
   def matches(guess)
     temp = code_pattern.clone
-    
     matches = {exact: 0, color: 0}
+    checked = []
+    
     guess.each_with_index do |e,index|
-      #byebug
       if e == temp[index]
         matches[:exact] += 1 
         temp[index] = 'X'
-      elsif
-        temp.include?(e) && temp.index(e) != guess[temp.index(e)]
-        matches[:color] += 1
       end
     end
+    
+    guess.each_with_index do |e,index|
+      next if temp[index] == "X" || checked.any?(e)
+      t_count = temp.count(e)
+      g_count = guess.count(e)
+      count = t_count if t_count == g_count
+      count ||= t_count - g_count
+      count = 0 if count.negative?
+      matches[:color] += count
+      checked << e
+    end
+
     return matches
   end
 
   
-
-
-
-
-
-
-
+  def who_won
+    winner =""
+    matches = matches(all_guesses.last)
+    if  matches[:exact] == 4
+      winner = Decoder.name.to_s 
+     
+    elsif all_guesses.length == 12
+    winner = Codemaker.name.to_s 
+    end
+    (winner == player.class.to_s) ? (return player.name) : (return opponent.name)
+  end
   
 
+
+  # Main game logic
+
+  def play
+    game_over = false
+    
+    if player.class.to_s == "Decoder"
+      set_code_pattern(opponent.create_random_code)
+      display(code_pattern,0,0) # to check TODO: remove for ready
   
+      until game_over
+        add_guess(player.enter_code_row("guess"))
+        matches = matches(all_guesses.last)
+        display(all_guesses.last, matches[:exact], matches[:color])
+        if matches[:exact] == $SLOTS
+          game_over = true 
+          print "\n   # Code cracked! "
+        elsif
+         all_guesses.length == $MAX_GUESSES
+         game_over = true 
+         print "\n   # 12 tries used... "
+        end
+      end
+    end
+  
+    if player.class.to_s == "Codemaker"
+      set_code_pattern(player.enter_code_row("code"))
+      display(code_pattern,0,0) # to check TODO: remove for ready
+      last_guess_matches = matches(["","","",""])
+      $exacts_by_guess = [0]
+      until game_over
+        add_guess(opponent.cpu_guess(last_guess_matches,all_guesses))
+        
+        matches = matches(all_guesses.last)
+        
+        last_guess_matches = matches.clone
+        #byebug
+        display(all_guesses.last, matches[:exact], matches[:color])
+        if matches[:exact] == $SLOTS
+          game_over = true 
+          print "\n   # Code cracked! "
+        elsif
+         all_guesses.length == $MAX_GUESSES
+         game_over = true 
+         print "\n   # 12 tries used... "
+        end
+      end
+    end
+  
+    print "#{who_won} wins!\n\n"
+  end
+
+
   #Display methods
 
   
@@ -145,7 +194,7 @@ class Game
 
   def display(code_pattern, exact_match, color_match)
     
-      print "   #--------------------------------------------#\n   |  |"
+      print "\n   #--------------------------------------------#\n   |  |"
       code_pattern.each {|i| print " #{colorize(i)} |"}
       print "     [#{add_color(196,exact_match)}]         [#{add_color(15,color_match)}]     |"
       print "\n   #--------------------------------------------# -> "
@@ -161,48 +210,20 @@ class Game
   end
 end
 
-def who_won
-  winner =""
-  matches = matches(all_guesses.last)
-  if  matches[:exact] == 4
-    winner = Decoder.name.to_s 
-   
-  elsif all_guesses.length == 12
-  winner = Codemaker.name.to_s 
-  end
-  (winner == player.class.to_s) ? (return player.name) : (return opponent.name)
-end
-
-def play
-  game_over = false
-
-
-  if player.class.to_s == "Decoder"
-    set_code_pattern(player.enter_code_row)
-    puts ""
-    display(code_pattern,0,0)
-
-    until game_over
-      add_guess(player.enter_code_row)
-      matches = matches(all_guesses.last)
-      display(all_guesses.last, matches[:exact], matches[:color])
-      if matches[:exact] == 4
-        game_over = true 
-        print "\n   # Code cracked! "
-      elsif
-       all_guesses.length == 12
-       game_over = true 
-       print "\n   # 12 tries used... "
-      end
-    end
-
-
-
-  end
-
-  if player.class.to_s == "Codemaker"
-
-  end
-
-  print "#{who_won} wins!\n\n"
+def display_rules
+  print "              Welcome to Master Mind!\n\n"
+  print "   #  As a decoder your job is to guess\n"
+  print "   #  a code made of #{$COLOR_AMOUNT} colored letters.\n"
+  print "   #  When you get a correct color in your\n"
+  print "   #  guess, the computer marks the amount\n"
+  print "   #  with a white number on the board. If\n"
+  print "   #  you get a color on the correct place\n"
+  print "   #  it'll be indicated with a red number.\n"
+  print "   #  Crack the code in 12 turn or less to\n"
+  print "   #  win. If you wish to be the codemaker\n"
+  print "   #  the computer will try to guess it.\n"
+  print "   #  When entering a color, use the first\n"
+  print "   #  letter of the color like shown below.\n\n"
+  print "   #             Good luck!\n\n"
+  display_possible_colors($COLORS)
 end
